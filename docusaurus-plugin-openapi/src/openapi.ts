@@ -17,6 +17,7 @@ import {
   ApiItem,
   RequestBodyObject,
   SchemaObject,
+  PluginOptions,
 } from "./types";
 import { normalizeUrl } from "@docusaurus/utils";
 
@@ -31,7 +32,7 @@ function isOperationObject(
   return (item as OperationObject).responses !== undefined;
 }
 
-function getPaths(spec: OpenApiObject): ApiItem[] {
+function getPaths(spec: OpenApiObject, options: PluginOptions): ApiItem[] {
   const seen: { [key: string]: number } = {};
   return Object.entries(spec.paths)
     .map(([path, pathObject]) => {
@@ -41,7 +42,8 @@ function getPaths(spec: OpenApiObject): ApiItem[] {
           let method = key;
           let operationObject = val as OperationObject;
           const summary = operationObject.summary || "Missing summary";
-          const baseId = kebabCase(summary);
+          const operationId = operationObject.operationId || "Missing operationId";
+          const baseId = options.pageId === "operationId" ? operationId : kebabCase(summary);
           let count = seen[baseId];
 
           let hashId;
@@ -76,8 +78,8 @@ function getPaths(spec: OpenApiObject): ApiItem[] {
     .filter((item) => item !== undefined) as ApiItem[];
 }
 
-function organizeSpec(spec: OpenApiObject) {
-  const paths = getPaths(spec);
+function organizeSpec(spec: OpenApiObject, options: PluginOptions) {
+  const paths = getPaths(spec, options);
 
   let tagNames: string[] = [];
   let tagged: ApiSection[] = [];
@@ -159,7 +161,8 @@ async function convertToPostman(
 export async function loadOpenapi(
   openapiPath: string,
   baseUrl: string,
-  routeBasePath: string
+  routeBasePath: string,
+  options: PluginOptions
 ) {
   const openapiData = importFresh(openapiPath) as OpenApiObject;
 
@@ -198,7 +201,7 @@ export async function loadOpenapi(
 
   const dereffedSpec = dereffed as OpenApiObject;
 
-  const order = organizeSpec(dereffedSpec);
+  const order = organizeSpec(dereffedSpec, options);
 
   order.forEach((category, i) => {
     category.items.forEach((item, ii) => {

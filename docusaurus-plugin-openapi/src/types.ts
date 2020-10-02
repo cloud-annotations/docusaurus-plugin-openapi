@@ -8,6 +8,8 @@ export interface PluginOptions {
   remarkPlugins: ([Function, object] | Function)[];
   rehypePlugins: string[];
   admonitions: any;
+  sidebarLabel: "summary" | "operationId";
+  pageId: "summary" | "operationId";
 }
 
 export interface LoadedContent {
